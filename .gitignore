@@ -1,0 +1,36 @@
+# Build outputs
+/build/
+/out/
+/dist/
+/cmake-build-*/
+
+# Runtime output
+/output/*
+!/output/.gitkeep
+
+# Local test artifacts
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.log
+*.tmp
+*.part
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# OS / tooling
+compile_commands.json
+*.o
+*.a
+*.so
+*.dylib
+
+# Python helper caches
+__pycache__/
+
