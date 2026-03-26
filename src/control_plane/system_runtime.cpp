@@ -4,10 +4,27 @@ namespace netdisk {
 
 SystemRuntime::SystemRuntime(sync::MetadataStore &metadata_store)
     : metadata_store_(metadata_store),
+      device_manager_(metadata_store),
+      policy_manager_(metadata_store),
+      task_scheduler_(metadata_store),
+      audit_logger_(metadata_store),
       backup_service_(task_scheduler_, policy_manager_, audit_logger_, metadata_store_, integrity_checker_),
-      recovery_service_(task_scheduler_, audit_logger_),
+      recovery_service_(task_scheduler_, audit_logger_, metadata_store_),
       shared_library_service_(task_scheduler_, audit_logger_, metadata_store_, integrity_checker_),
-      file_index_service_(metadata_store_) {}
+      file_index_service_(metadata_store_),
+      control_plane_service_(device_manager_,
+                             policy_manager_,
+                             task_scheduler_,
+                             node_network_service_,
+                             audit_logger_,
+                             backup_service_,
+                             recovery_service_,
+                             shared_library_service_,
+                             file_index_service_) {}
+
+sync::MetadataStore &SystemRuntime::metadata() {
+    return metadata_store_;
+}
 
 DeviceManager &SystemRuntime::devices() {
     return device_manager_;
@@ -55,6 +72,10 @@ SharedLibraryService &SystemRuntime::shared_library() {
 
 FileIndexService &SystemRuntime::file_index() {
     return file_index_service_;
+}
+
+ControlPlaneService &SystemRuntime::control() {
+    return control_plane_service_;
 }
 
 }  // namespace netdisk

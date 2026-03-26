@@ -32,6 +32,15 @@ public:
         record.stored_at_epoch = CurrentEpoch();
         return record;
     }
+
+    void RestoreFile(const StoredObjectRecord &record,
+                     const std::filesystem::path &target_path) override {
+        if (record.source_path.empty()) {
+            throw std::runtime_error("none backend cannot restore without source path");
+        }
+        std::filesystem::create_directories(target_path.parent_path());
+        std::filesystem::copy_file(record.source_path, target_path, std::filesystem::copy_options::overwrite_existing);
+    }
 };
 
 class MirrorStorageBackend : public IStorageBackend {
@@ -71,6 +80,15 @@ public:
         return record;
     }
 
+    void RestoreFile(const StoredObjectRecord &record,
+                     const std::filesystem::path &target_path) override {
+        if (record.storage_key.empty()) {
+            throw std::runtime_error("mirror backend restore requires storage key");
+        }
+        std::filesystem::create_directories(target_path.parent_path());
+        std::filesystem::copy_file(record.storage_key, target_path, std::filesystem::copy_options::overwrite_existing);
+    }
+
 private:
     std::filesystem::path root_;
 };
@@ -101,6 +119,18 @@ public:
         record.source_path = local_path.lexically_normal().string();
         record.stored_at_epoch = CurrentEpoch();
         return record;
+    }
+
+    void RestoreFile(const StoredObjectRecord &record,
+                     const std::filesystem::path &target_path) override {
+        if (record.storage_key.empty()) {
+            throw std::runtime_error("fastdfs restore requires storage key");
+        }
+
+        std::filesystem::create_directories(target_path.parent_path());
+        if (fdfs_download_file(record.storage_key.c_str(), target_path.lexically_normal().string().c_str()) != 0) {
+            throw std::runtime_error("failed to restore file from FastDFS: " + record.storage_key);
+        }
     }
 };
 

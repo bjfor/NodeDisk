@@ -42,6 +42,19 @@ enum class JobState : std::uint8_t {
     kFailed = 3,
 };
 
+enum class RestoreRequestState : std::uint8_t {
+    kQueued = 0,
+    kRunning = 1,
+    kCompleted = 2,
+    kFailed = 3,
+};
+
+enum class SharedRecipientState : std::uint8_t {
+    kPending = 0,
+    kDelivered = 1,
+    kFailed = 2,
+};
+
 struct NodeInfo {
     std::string node_id;
     std::string device_name;
@@ -122,6 +135,17 @@ struct BackupRecord {
     std::uint64_t backed_up_at_epoch = 0;
 };
 
+struct DeviceFileRecord {
+    std::string record_id;
+    std::string node_id;
+    std::string file_id;
+    std::string relative_path;
+    std::string absolute_path;
+    std::string source_kind;
+    std::string source_ref_id;
+    std::uint64_t updated_at_epoch = 0;
+};
+
 struct BackupPolicy {
     std::string policy_id;
     std::string node_id;
@@ -147,6 +171,15 @@ struct BackupJob {
     std::uint64_t created_at_epoch = 0;
 };
 
+struct SharedLibraryRecipient {
+    std::string entry_id;
+    std::string node_id;
+    SharedRecipientState state = SharedRecipientState::kPending;
+    std::string received_path;
+    std::string error_message;
+    std::uint64_t updated_at_epoch = 0;
+};
+
 struct SharedLibraryEntry {
     std::string entry_id;
     std::string owner_node_id;
@@ -156,8 +189,10 @@ struct SharedLibraryEntry {
     std::string note;
     std::uint64_t created_at_epoch = 0;
     std::uint64_t expires_at_epoch = 0;
+    bool expired = false;
     bool delivered = false;
     std::vector<std::string> recipient_nodes;
+    std::vector<SharedLibraryRecipient> recipients;
 };
 
 struct RestoreRequest {
@@ -167,6 +202,9 @@ struct RestoreRequest {
     std::string target_node_id;
     std::string destination_path;
     std::uint64_t created_at_epoch = 0;
+    RestoreRequestState state = RestoreRequestState::kQueued;
+    std::uint64_t completed_at_epoch = 0;
+    std::string error_message;
 };
 
 struct ScheduledTaskRecord {
@@ -177,6 +215,7 @@ struct ScheduledTaskRecord {
     std::string target_node;
     JobState state = JobState::kQueued;
     std::uint64_t created_at_epoch = 0;
+    std::uint32_t retry_count = 0;
     std::string detail;
 };
 

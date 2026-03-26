@@ -6,11 +6,14 @@
 
 #include "netdisk/common/status.h"
 #include "netdisk/core/types.h"
+#include "netdisk/metadata/metadata_store.h"
 
 namespace netdisk {
 
 class PolicyManager {
 public:
+    explicit PolicyManager(sync::MetadataStore &store);
+
     Status UpsertBackupPolicy(const sync::BackupPolicy &policy);
     Status UpsertTransferPolicy(const sync::TransferPolicy &policy);
     std::optional<sync::BackupPolicy> FindBackupPolicy(const std::string &policy_id) const;
@@ -20,8 +23,7 @@ public:
     std::vector<sync::BackupPolicy> ListBackupPoliciesForNode(const std::string &node_id) const;
 
 private:
-    std::vector<sync::BackupPolicy> backup_policies_;
-    std::vector<sync::TransferPolicy> transfer_policies_;
+    sync::MetadataStore &store_;
 };
 
 }  // namespace netdisk

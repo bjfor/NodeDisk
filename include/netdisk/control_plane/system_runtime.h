@@ -4,6 +4,7 @@
 #include "netdisk/backup/backup_service.h"
 #include "netdisk/backup/file_index_service.h"
 #include "netdisk/backup/recovery_service.h"
+#include "netdisk/control_plane/control_plane_service.h"
 #include "netdisk/control_plane/device_manager.h"
 #include "netdisk/control_plane/policy_manager.h"
 #include "netdisk/control_plane/task_scheduler.h"
@@ -21,6 +22,7 @@ class SystemRuntime {
 public:
     explicit SystemRuntime(sync::MetadataStore &metadata_store);
 
+    sync::MetadataStore &metadata();
     DeviceManager &devices();
     PolicyManager &policies();
     TaskScheduler &tasks();
@@ -33,6 +35,7 @@ public:
     RecoveryService &recovery();
     SharedLibraryService &shared_library();
     FileIndexService &file_index();
+    ControlPlaneService &control();
 
 private:
     sync::MetadataStore &metadata_store_;
@@ -48,6 +51,7 @@ private:
     RecoveryService recovery_service_;
     SharedLibraryService shared_library_service_;
     FileIndexService file_index_service_;
+    ControlPlaneService control_plane_service_;
 };
 
 }  // namespace netdisk

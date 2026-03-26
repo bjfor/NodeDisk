@@ -98,6 +98,9 @@ target_include_directories(netdisk_security
 )
 
 add_library(netdisk_control_plane STATIC
+    src/control_plane/control_node_server.cpp
+    src/control_plane/device_agent_service.cpp
+    src/control_plane/control_plane_service.cpp
     src/control_plane/device_manager.cpp
     src/control_plane/task_scheduler.cpp
     src/control_plane/policy_manager.cpp
@@ -106,6 +109,13 @@ add_library(netdisk_control_plane STATIC
 target_include_directories(netdisk_control_plane
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(netdisk_control_plane
+    PUBLIC
+        netdisk_metadata
+        netdisk_security
+        Threads::Threads
 )
 
 add_library(netdisk_backup STATIC
@@ -225,5 +235,47 @@ target_link_libraries(netdisk_cli
         netdisk_metadata
         netdisk_sync
         netdisk_common
+        Threads::Threads
+)
+
+add_executable(control_node
+    apps/control_node/main.cpp
+)
+
+target_include_directories(control_node
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(control_node
+    PRIVATE
+        netdisk_runtime
+        netdisk_backup
+        netdisk_transfer
+        netdisk_control_plane
+        netdisk_security
+        netdisk_storage
+        netdisk_metadata
+        netdisk_sync
+        netdisk_common
+        Threads::Threads
+)
+
+add_executable(device_agent
+    apps/device_agent/main.cpp
+)
+
+target_include_directories(device_agent
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(device_agent
+    PRIVATE
+        netdisk_control_plane
+        netdisk_security
+        netdisk_metadata
+        netdisk_common
+        netdisk_runtime
         Threads::Threads
 )

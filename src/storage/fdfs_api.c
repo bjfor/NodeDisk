@@ -54,6 +54,24 @@ static int run_upload_command(const char *filename, char *fileid) {
     return (strlen(fileid) > 0) ? 0 : -1;
 }
 
+static int run_download_command(const char *fileid, const char *local_filename) {
+    char conf_path[256] = {0};
+    const char *download_command = getenv("SYNC_FDFS_DOWNLOAD_CMD");
+    char command[1024] = {0};
+
+    if (get_cfg_value(CFG_PATH, "dfs_path", "client", conf_path) != 0) {
+        return -1;
+    }
+
+    if (download_command == NULL || *download_command == '\0') {
+        download_command = "fdfs_download_file";
+    }
+
+    snprintf(command, sizeof(command), "%s %s %s %s >/dev/null 2>&1",
+             download_command, conf_path, fileid, local_filename);
+    return system(command);
+}
+
 int fdfs_upload_file(const char *filename, char *fileid) {
     return run_upload_command(filename, fileid);
 }
@@ -61,6 +79,10 @@ int fdfs_upload_file(const char *filename, char *fileid) {
 int fdfs_upload_file1(const char *filename, char *fileid, int size) {
     (void)size;
     return run_upload_command(filename, fileid);
+}
+
+int fdfs_download_file(const char *fileid, const char *local_filename) {
+    return run_download_command(fileid, local_filename);
 }
 
 int fdfs_make_file_url(const char *fileid, char *file_url) {

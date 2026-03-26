@@ -1,6 +1,7 @@
 #include "netdisk/backup/backup_service.h"
 
 #include <filesystem>
+#include <algorithm>
 #include <memory>
 
 #include "netdisk/sync/chunker.h"
@@ -53,6 +54,21 @@ sync::BackupRecord MakeBackupRecord(const sync::BackupJob &job,
     return record;
 }
 
+sync::DeviceFileRecord MakeBackupDeviceFileRecord(const sync::BackupJob &job,
+                                                  const sync::FileRecord &file,
+                                                  const sync::BackupRecord &backup_record) {
+    sync::DeviceFileRecord record;
+    record.record_id = job.node_id + "|" + file.absolute_path;
+    record.node_id = job.node_id;
+    record.file_id = file.file_id;
+    record.relative_path = file.relative_path;
+    record.absolute_path = file.absolute_path;
+    record.source_kind = "backup";
+    record.source_ref_id = backup_record.record_id;
+    record.updated_at_epoch = backup_record.backed_up_at_epoch;
+    return record;
+}
+
 }  // namespace
 
 namespace netdisk {
@@ -93,20 +109,11 @@ Status BackupService::StartBackup(const sync::BackupJob &job) {
     task.related_id = job.job_id;
     task.source_node = job.node_id;
     task.target_node = job.node_id;
+    task.created_at_epoch = job.created_at_epoch;
     task.detail = job.source_path;
     const Status status = scheduler_.ScheduleTask(task);
     if (status.ok()) {
-        bool updated = false;
-        for (auto &current : jobs_) {
-            if (current.job_id == job.job_id) {
-                current = job;
-                updated = true;
-                break;
-            }
-        }
-        if (!updated) {
-            jobs_.push_back(job);
-        }
+        metadata_store_.UpsertBackupJob(job);
         audit_logger_.Append(MakeAuditEvent("backup.job", "scheduled backup job: " + job.job_id));
     }
     return status;
@@ -147,8 +154,10 @@ Status BackupService::ExecuteBackup(const sync::BackupJob &job, sync::IStorageBa
 
         try {
             const auto stored = backend.StoreFile(file, file.absolute_path);
+            const auto backup_record = MakeBackupRecord(job, file, stored);
             metadata_store_.UpsertStoredObject(stored);
-            metadata_store_.UpsertBackupRecord(MakeBackupRecord(job, file, stored));
+            metadata_store_.UpsertBackupRecord(backup_record);
+            metadata_store_.UpsertDeviceFile(MakeBackupDeviceFileRecord(job, file, backup_record));
         } catch (const std::exception &ex) {
             scheduler_.UpdateTaskState(job.job_id, sync::JobState::kFailed, ex.what());
             return Status::Error(StatusCode::kInternalError, ex.what());
@@ -165,26 +174,44 @@ Status BackupService::ExecuteBackup(const sync::BackupJob &job, sync::IStorageBa
 }
 
 std::optional<sync::BackupJob> BackupService::FindJob(const std::string &job_id) const {
-    for (const auto &job : jobs_) {
-        if (job.job_id == job_id) {
-            return job;
-        }
-    }
-    return std::nullopt;
+    return metadata_store_.GetBackupJob(job_id);
 }
 
 std::vector<sync::BackupJob> BackupService::ListJobs() const {
-    return jobs_;
+    return metadata_store_.ListBackupJobs();
 }
 
 std::vector<sync::BackupJob> BackupService::ListJobsForNode(const std::string &node_id) const {
     std::vector<sync::BackupJob> result;
-    for (const auto &job : jobs_) {
+    for (const auto &job : metadata_store_.ListBackupJobs()) {
         if (job.node_id == node_id) {
             result.push_back(job);
         }
     }
     return result;
+}
+
+std::vector<sync::BackupRecord> BackupService::ListBackupHistory(const std::string &node_id,
+                                                                 const std::string &relative_path) const {
+    std::vector<sync::BackupRecord> result;
+    for (const auto &record : metadata_store_.ListBackupRecords()) {
+        if (record.node_id == node_id && record.relative_path == relative_path) {
+            result.push_back(record);
+        }
+    }
+    std::sort(result.begin(), result.end(), [](const sync::BackupRecord &lhs, const sync::BackupRecord &rhs) {
+        return lhs.backed_up_at_epoch > rhs.backed_up_at_epoch;
+    });
+    return result;
+}
+
+std::optional<sync::BackupRecord> BackupService::FindLatestBackup(const std::string &node_id,
+                                                                  const std::string &relative_path) const {
+    const auto history = ListBackupHistory(node_id, relative_path);
+    if (history.empty()) {
+        return std::nullopt;
+    }
+    return history.front();
 }
 
 }  // namespace netdisk

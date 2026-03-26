@@ -29,6 +29,10 @@ public:
     std::optional<sync::BackupJob> FindJob(const std::string &job_id) const;
     std::vector<sync::BackupJob> ListJobs() const;
     std::vector<sync::BackupJob> ListJobsForNode(const std::string &node_id) const;
+    std::vector<sync::BackupRecord> ListBackupHistory(const std::string &node_id,
+                                                      const std::string &relative_path) const;
+    std::optional<sync::BackupRecord> FindLatestBackup(const std::string &node_id,
+                                                       const std::string &relative_path) const;
 
 private:
     TaskScheduler &scheduler_;
@@ -36,7 +40,6 @@ private:
     AuditLogger &audit_logger_;
     sync::MetadataStore &metadata_store_;
     IntegrityChecker &integrity_checker_;
-    std::vector<sync::BackupJob> jobs_;
 };
 
 }  // namespace netdisk

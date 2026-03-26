@@ -12,6 +12,9 @@ namespace netdisk {
 class NodeNetworkService {
 public:
     Status UpsertPeer(const sync::OverlayPeer &peer);
+    void RefreshPeersFromDevices(const std::vector<sync::NodeInfo> &devices,
+                                 std::uint64_t now_epoch,
+                                 std::uint64_t offline_after_seconds);
     Status MarkPeerOffline(const std::string &node_id);
     std::optional<sync::OverlayPeer> FindPeer(const std::string &node_id) const;
     std::vector<sync::OverlayPeer> ListPeers() const;

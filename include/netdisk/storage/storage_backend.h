@@ -16,6 +16,8 @@ public:
     virtual std::string Name() const = 0;
     virtual StoredObjectRecord StoreFile(const FileRecord &file,
                                          const std::filesystem::path &local_path) = 0;
+    virtual void RestoreFile(const StoredObjectRecord &record,
+                             const std::filesystem::path &target_path) = 0;
 };
 
 std::unique_ptr<IStorageBackend> CreateStorageBackend(const std::string &backend_name,

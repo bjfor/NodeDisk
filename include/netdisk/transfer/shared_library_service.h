@@ -28,9 +28,16 @@ public:
     Status ReceiveEntry(const std::string &entry_id,
                         const std::string &target_node_id,
                         const std::filesystem::path &target_root);
-    Status MarkDelivered(const std::string &entry_id, const std::string &target_node_id);
+    Status RetryReceive(const std::string &entry_id,
+                        const std::string &target_node_id,
+                        const std::filesystem::path &target_root);
+    Status MarkDelivered(const std::string &entry_id,
+                         const std::string &target_node_id,
+                         const std::string &received_path = "");
     std::vector<sync::SharedLibraryEntry> ListEntries() const;
+    std::vector<sync::SharedLibraryEntry> ListActiveEntries() const;
     std::vector<sync::SharedLibraryEntry> ListEntriesForNode(const std::string &node_id) const;
+    std::vector<sync::SharedLibraryEntry> ListPendingEntriesForNode(const std::string &node_id) const;
     std::optional<sync::SharedLibraryEntry> FindEntry(const std::string &entry_id) const;
     std::size_t CleanupExpired(std::uint64_t now_epoch);
 
@@ -40,7 +47,6 @@ private:
     sync::MetadataStore &metadata_store_;
     IntegrityChecker &integrity_checker_;
     sync::TransferPolicy policy_;
-    std::vector<sync::SharedLibraryEntry> entries_;
 };
 
 }  // namespace netdisk
