@@ -191,12 +191,15 @@ cmake --build build -j
 
 - [docs/testing_v1.md](docs/testing_v1.md)
 - [docs/distributed_bootstrap_guide.md](docs/distributed_bootstrap_guide.md)
+- [docs/zerotier_phase1_plan.md](docs/zerotier_phase1_plan.md)
 
 ## 3.0 第一阶段启动脚本
 
 ```bash
 ./scripts/run_control_node.sh [db_path] [host] [port] [offline_after_seconds]
 ./scripts/run_device_agent.sh [local_db_path] [control_host] [control_port] [node_id] [device_name] [zt_ip] [backend_name] [backend_arg] [poll_interval_seconds] [max_cycles]
+./scripts/run_control_node_env.sh [env_file]
+./scripts/run_device_agent_env.sh [env_file]
 ```
 
 推荐先按：
@@ -206,6 +209,12 @@ cmake --build build -j
 - 使用 ZeroTier 官方客户端先打通虚拟网络
 
 `run_device_agent.sh` 现在默认使用 `device_agent serve` 常驻轮询模式。
+
+如果你准备开始真实双机验证，建议直接使用：
+
+- [configs/control_node.env.example](configs/control_node.env.example)
+- [configs/device_agent.env.example](configs/device_agent.env.example)
+- [docs/zerotier_phase1_plan.md](docs/zerotier_phase1_plan.md)
 
 更完整的跨机准备说明见：
 
